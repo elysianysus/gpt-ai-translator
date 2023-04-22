@@ -155,7 +155,8 @@ def handle_audio_message(event):
     global translate_language, audio_language
     message_id = event.message.id
     message_content = line_bot_api.get_message_content(message_id)
-    user_audio_path = f"api/audio/user_{shortuuid.uuid()}_audio.m4a"
+    user_audio_path = os.path.join(
+        'data', 'audio', f'user_{shortuuid.uuid()}_audio.m4a')
     with open(user_audio_path, 'wb') as f:
         f.write(message_content.content)
     whisper_text = openai_whisper(user_audio_path)
