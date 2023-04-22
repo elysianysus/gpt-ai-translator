@@ -9,15 +9,9 @@ from flask import Flask, request, abort
 
 app = Flask(__name__)
 
-config = {}
-with open("config.txt") as f:
-    for line in f:
-        list_line = line.strip().replace(" ", "").split("=")
-        config[list_line[0]] = list_line[1]
-
-LINE_CHANNEL_ACCESS_TOKEN = config.get("LINE_CHANNEL_ACCESS_TOKEN")
-LINE_CHANNEL_SECRET = config.get("LINE_CHANNEL_SECRET")
-OPENAI_API_KEY = config.get("OPENAI_API_KEY")
+LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
+LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 
 line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
