@@ -1,6 +1,5 @@
 import os
-import uuid
-import json
+import shortuuid
 import openai
 
 from linebot import LineBotApi, WebhookHandler
@@ -24,6 +23,8 @@ line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(LINE_CHANNEL_SECRET)
 openai.api_key = OPENAI_API_KEY
 
+# region Language related
+
 translate_language = "Japanese"
 audio_language = "Traditional Chinese"
 
@@ -40,6 +41,8 @@ lan_dic = {
     "德文": "German"
 }
 reverse_lan_dict = {value: key for key, value in lan_dic.items()}
+
+# endregion
 
 
 def openai_whisper(audio_path):
@@ -136,15 +139,14 @@ def handle_text_message(event):
     elif ("設定打字翻譯" in user_input):
         translate_language = lan_dic[user_input.split(" ")[1]]
         response = f"""設定完畢！ 
-我方語言：{reverse_lan_dict[audio_language]}
-對方語言：{reverse_lan_dict[translate_language]}"""
+我方語言：{reverse_lan_dict[audio_language]}（{audio_language}）
+對方語言：{reverse_lan_dict[translate_language]}（{translate_language}）"""
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=response))
 
     elif (user_input == "/current_setting") or (user_input == "目前設定"):
-        response = f"""
-我方語言：{reverse_lan_dict[audio_language]}
-對方語言：{reverse_lan_dict[translate_language]}"""
+        response = f"""我方語言：{reverse_lan_dict[audio_language]}（{audio_language}）
+對方語言：{reverse_lan_dict[translate_language]}（{translate_language}）"""
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=response))
 
@@ -159,9 +161,12 @@ def handle_audio_message(event):
     global translate_language, audio_language
     message_id = event.message.id
     message_content = line_bot_api.get_message_content(message_id)
-    with open(f'whisper_audio.m4a', 'wb') as f:
+    user_audio_path = f"audio/user_{shortuuid.uuid()}_audio.m4a"
+    with open(user_audio_path, 'wb') as f:
         f.write(message_content.content)
-    whisper_text = openai_whisper(f'whisper_audio.m4a')
+    whisper_text = openai_whisper(user_audio_path)
+    if (os.path.exists(user_audio_path)):
+        os.remove(user_audio_path)
     response_text = translate_openai(whisper_text, audio_language)
     line_bot_api.reply_message(
         event.reply_token, TextSendMessage(text=response_text))
