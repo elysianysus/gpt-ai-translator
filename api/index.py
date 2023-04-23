@@ -20,9 +20,6 @@ chatgpt = ChatGPT()
 
 # region Language related
 
-default_translate_language = "Japanese"
-default_audio_language = "Traditional Chinese"
-
 lang_dict = {
     "繁體中文": "Traditional Chinese",
     "英文": "English",
@@ -70,11 +67,6 @@ def callback():
 def handle_text_message(event):
     user_input = event.message.text
     if (user_input == "/setting") or (user_input == "設定"):
-        # Set default language by user
-        user_dict[event.source.user_id] = {
-            user_translate_language_key: default_translate_language,
-            user_audio_language_key: default_audio_language
-        }
         flex_message = TextSendMessage(text="請選擇語音辨識後的翻譯語言（我方語言）",
                                        quick_reply=QuickReply(items=[
                                            QuickReplyButton(action=MessageAction(
@@ -146,53 +138,54 @@ def handle_text_message(event):
     elif (user_input == "/current-setting") or (user_input == "目前設定"):
         user_id = event.source.user_id
         if not (user_exists(user_id)):
-            line_bot_api.reply_message(
-                event.reply_token, TextSendMessage(text="請先輸入「/setting」或「設定」指令，設定您的翻譯情境！"))
-        else:
-            # Format response message
-            audio_language = user_dict[user_id][user_audio_language_key]
-            translate_language = user_dict[user_id][user_translate_language_key]
-            response = f"""我方語言：{reverse_lang_dict[audio_language]}（{audio_language}）
+            init_user_lang(user_id)
+        # Format response message
+        audio_language = user_dict[user_id][user_audio_language_key]
+        translate_language = user_dict[user_id][user_translate_language_key]
+        response = f"""我方語言：{reverse_lang_dict[audio_language]}（{audio_language}）
 對方語言：{reverse_lang_dict[translate_language]}（{translate_language}）"""
-            line_bot_api.reply_message(
-                event.reply_token, TextSendMessage(text=response))
+        line_bot_api.reply_message(
+            event.reply_token, TextSendMessage(text=response))
 
     else:
         user_id = event.source.user_id
         if not (user_exists(user_id)):
-            line_bot_api.reply_message(
-                event.reply_token, TextSendMessage(text="請先輸入「/setting」或「設定」指令，設定您的翻譯情境！"))
-        else:
-            response = chatgpt.translate(
-                user_input, user_dict[user_id][user_translate_language_key])
-            line_bot_api.reply_message(
-                event.reply_token, TextSendMessage(text=response))
+            init_user_lang(user_id)
+        response = chatgpt.translate(
+            user_input, user_dict[user_id][user_translate_language_key])
+        line_bot_api.reply_message(
+            event.reply_token, TextSendMessage(text=response))
 
 
 @line_handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
     user_id = event.source.user_id
     if not (user_exists(user_id)):
-        line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text="請先輸入「/setting」或「設定」指令，設定您的翻譯情境！"))
-    else:
-        message_id = event.message.id
-        message_content = line_bot_api.get_message_content(message_id)
-        user_audio_path = os.path.join(app.config.get(
-            'AUDIO_BASE_PATH'), f'{message_id}.m4a')
-        with open(user_audio_path, 'wb') as f:
-            f.write(message_content.content)
-        whisper_text = chatgpt.whisper(user_audio_path)
-        if (os.path.exists(user_audio_path)):
-            os.remove(user_audio_path)
-        response_text = chatgpt.translate(
-            whisper_text, user_dict[user_id][user_audio_language_key])
-        line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text=response_text))
+        init_user_lang(user_id)
+    message_id = event.message.id
+    message_content = line_bot_api.get_message_content(message_id)
+    user_audio_path = os.path.join(app.config.get(
+        'AUDIO_BASE_PATH'), f'{message_id}.m4a')
+    with open(user_audio_path, 'wb') as f:
+        f.write(message_content.content)
+    whisper_text = chatgpt.whisper(user_audio_path)
+    if (os.path.exists(user_audio_path)):
+        os.remove(user_audio_path)
+    response_text = chatgpt.translate(
+        whisper_text, user_dict[user_id][user_audio_language_key])
+    line_bot_api.reply_message(
+        event.reply_token, TextSendMessage(text=response_text))
 
 
 def user_exists(user_id):
     return user_id in user_dict
+
+
+def init_user_lang(user_id):
+    user_dict[user_id] = {
+        user_translate_language_key: 'Japanese',
+        user_audio_language_key: 'Traditional Chinese'
+    }
 
 
 if __name__ == '__main__':
