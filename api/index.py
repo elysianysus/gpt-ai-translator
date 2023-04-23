@@ -97,7 +97,7 @@ def handle_text_message(event):
 
     elif ("設定辨識翻譯" in user_input):
         # Set audio language by user
-        user_dict[event.source.user_id][user_audio_language_key] = lang_dict[user_input.split(" ")[
+        user_dict[user_id][user_audio_language_key] = lang_dict[user_input.split(" ")[
             1]]
         flex_message = TextSendMessage(text="請選擇打字後的翻譯語言（對方語言）",
                                        quick_reply=QuickReply(items=[
