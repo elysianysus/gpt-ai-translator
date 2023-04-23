@@ -66,8 +66,8 @@ def callback():
 @line_handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     user_input = event.message.text
+    user_id = event.source.user_id
     if (user_input == "/setting") or (user_input == "設定"):
-        user_id = event.source.user_id
         if not (user_exists(user_id)):
             init_user_lang(user_id)
         flex_message = TextSendMessage(text="請選擇語音辨識後的翻譯語言（我方語言）",
@@ -125,7 +125,6 @@ def handle_text_message(event):
         line_bot_api.reply_message(event.reply_token, flex_message)
 
     elif ("設定打字翻譯" in user_input):
-        user_id = event.source.user_id
         # Set translate language by user
         user_dict[user_id][user_translate_language_key] = lang_dict[user_input.split(" ")[
             1]]
@@ -139,7 +138,6 @@ def handle_text_message(event):
             event.reply_token, TextSendMessage(text=response))
 
     elif (user_input == "/current-setting") or (user_input == "目前設定"):
-        user_id = event.source.user_id
         if not (user_exists(user_id)):
             init_user_lang(user_id)
         # Format response message
@@ -151,7 +149,6 @@ def handle_text_message(event):
             event.reply_token, TextSendMessage(text=response))
 
     else:
-        user_id = event.source.user_id
         if not (user_exists(user_id)):
             init_user_lang(user_id)
         response = chatgpt.translate(
