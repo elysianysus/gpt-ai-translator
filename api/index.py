@@ -67,6 +67,8 @@ def callback():
 def handle_text_message(event):
     user_input = event.message.text
     if (user_input == "/setting") or (user_input == "設定"):
+        if not (user_exists(user_id)):
+            init_user_lang(user_id)
         flex_message = TextSendMessage(text="請選擇語音辨識後的翻譯語言（我方語言）",
                                        quick_reply=QuickReply(items=[
                                            QuickReplyButton(action=MessageAction(
