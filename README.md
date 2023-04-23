@@ -7,6 +7,15 @@ Using Flask, OpenAI whisper API, GPT3.5 API to develop line language translator.
 
 ![Image](data/img/demo.png)
 
+#### 使用指令
+
+| 指令     | 別名             | 說明         |
+| -------- | ---------------- | ------------ |
+| 目前設定 | /current-setting | 查詢目前設定 |
+| 設定     | /setting         | 設定語言     |
+
+**備註：建議在手持裝置操作這些指令，因為輸入"設定"會一步步帶各位完成語言設定。**
+
 #### 支援語系
 
 - 繁體中文, 英文, 日文, 韓文, 法文, 泰文, 義大利文, 西班牙文, 荷蘭文, 德文

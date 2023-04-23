@@ -61,7 +61,7 @@ def callback():
 def handle_text_message(event):
     global translate_language, audio_language
     user_input = event.message.text
-    if (user_input == "設定"):
+    if (user_input == "/setting") or (user_input == "設定"):
         flex_message = TextSendMessage(text="請選擇語音辨識後的翻譯語言（我方語言）",
                                        quick_reply=QuickReply(items=[
                                            QuickReplyButton(action=MessageAction(
@@ -122,7 +122,7 @@ def handle_text_message(event):
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=response))
 
-    elif (user_input == "目前設定"):
+    elif (user_input == "/current-setting") or (user_input == "目前設定"):
         response = f"""我方語言：{reverse_lan_dict[audio_language]}（{audio_language}）
 對方語言：{reverse_lan_dict[translate_language]}（{translate_language}）"""
         line_bot_api.reply_message(
