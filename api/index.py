@@ -65,6 +65,7 @@ def callback():
 
 @line_handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
+    user_id = event.source.user_id
     user_input = event.message.text
     if (user_input == "/setting") or (user_input == "設定"):
         if not (user_exists(user_id)):
