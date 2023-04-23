@@ -1,21 +1,22 @@
 import os
-import shortuuid
-import openai
 
+from dotenv import load_dotenv
+from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, AudioMessage, TextSendMessage, AudioSendMessage, QuickReply, QuickReplyButton, MessageAction
-from flask import Flask, request, abort
+from api.ai.chatgpt import ChatGPT
+from api.config.configs import *
+
+load_dotenv()
 
 app = Flask(__name__)
+app.config.from_object(ProductionForVercelConfig)
 
-LINE_CHANNEL_ACCESS_TOKEN = os.environ.get("LINE_CHANNEL_ACCESS_TOKEN")
-LINE_CHANNEL_SECRET = os.environ.get("LINE_CHANNEL_SECRET")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
+line_handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 
-line_bot_api = LineBotApi(LINE_CHANNEL_ACCESS_TOKEN)
-handler = WebhookHandler(LINE_CHANNEL_SECRET)
-openai.api_key = OPENAI_API_KEY
+chatgpt = ChatGPT()
 
 # region Language related
 
@@ -39,45 +40,28 @@ reverse_lan_dict = {value: key for key, value in lan_dic.items()}
 # endregion
 
 
-def openai_whisper(audio_path):
-    audio_file = open(audio_path, "rb")
-    transcript = openai.Audio.transcribe("whisper-1", audio_file)
-    return transcript["text"]
+@app.route('/')
+def home():
+    return 'Translator now working...'
 
 
-def translate_openai(text, language):
-    prompt = f"""'{text}'
-    Help me to translate this sentence to {language}, only target language, no need original language."""
-    # Translate the chunk using the GPT model
-    response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.5
-    )
-    translated_subtitles = response['choices'][0]['message']['content']
-    return translated_subtitles
-
-
-@app.route('/callback', methods=['POST'])
+@app.route('/webhook', methods=['POST'])
 def callback():
     signature = request.headers['X-Line-Signature']
     body = request.get_data(as_text=True)
     app.logger.info("Request body: " + body)
-
     try:
-        print(body, signature)
-        handler.handle(body, signature)
+        line_handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
-
     return 'OK'
 
 
-@handler.add(MessageEvent, message=TextMessage)
+@line_handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
     global translate_language, audio_language
     user_input = event.message.text
-    if (user_input == "/setting") or (user_input == "設定"):
+    if (user_input == "設定"):
         flex_message = TextSendMessage(text="請選擇語音辨識後的翻譯語言（我方語言）",
                                        quick_reply=QuickReply(items=[
                                            QuickReplyButton(action=MessageAction(
@@ -132,37 +116,37 @@ def handle_text_message(event):
 
     elif ("設定打字翻譯" in user_input):
         translate_language = lan_dic[user_input.split(" ")[1]]
-        response = f"""設定完畢！ 
+        response = f"""設定完畢！
 我方語言：{reverse_lan_dict[audio_language]}（{audio_language}）
 對方語言：{reverse_lan_dict[translate_language]}（{translate_language}）"""
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=response))
 
-    elif (user_input == "/current_setting") or (user_input == "目前設定"):
+    elif (user_input == "目前設定"):
         response = f"""我方語言：{reverse_lan_dict[audio_language]}（{audio_language}）
 對方語言：{reverse_lan_dict[translate_language]}（{translate_language}）"""
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=response))
 
     else:
-        response = translate_openai(user_input, translate_language)
+        response = chatgpt.translate(user_input, translate_language)
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=response))
 
 
-@handler.add(MessageEvent, message=AudioMessage)
+@line_handler.add(MessageEvent, message=AudioMessage)
 def handle_audio_message(event):
     global translate_language, audio_language
     message_id = event.message.id
     message_content = line_bot_api.get_message_content(message_id)
-    user_audio_path = os.path.join(
-        'data', 'audio', f'user_{shortuuid.uuid()}_audio.m4a')
+    user_audio_path = os.path.join(app.config.get(
+        'AUDIO_BASE_PATH'), f'{message_id}.m4a')
     with open(user_audio_path, 'wb') as f:
         f.write(message_content.content)
-    whisper_text = openai_whisper(user_audio_path)
+    whisper_text = chatgpt.whisper(user_audio_path)
     if (os.path.exists(user_audio_path)):
         os.remove(user_audio_path)
-    response_text = translate_openai(whisper_text, audio_language)
+    response_text = chatgpt.translate(whisper_text, audio_language)
     line_bot_api.reply_message(
         event.reply_token, TextSendMessage(text=response_text))
 
