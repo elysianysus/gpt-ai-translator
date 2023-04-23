@@ -1,15 +1,17 @@
 import os
 
+from dotenv import load_dotenv
 from flask import Flask, request, abort
 from linebot import LineBotApi, WebhookHandler
 from linebot.exceptions import InvalidSignatureError
 from linebot.models import MessageEvent, TextMessage, AudioMessage, TextSendMessage, AudioSendMessage, QuickReply, QuickReplyButton, MessageAction
 from api.ai.chatgpt import ChatGPT
-from dotenv import load_dotenv
+from api.config.configs import *
 
 load_dotenv()
 
 app = Flask(__name__)
+app.config.from_object(ProductionForVercelConfig)
 
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 line_handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
@@ -137,7 +139,8 @@ def handle_audio_message(event):
     global translate_language, audio_language
     message_id = event.message.id
     message_content = line_bot_api.get_message_content(message_id)
-    user_audio_path = f'/tmp/{message_id}.m4a'
+    user_audio_path = os.path.join(app.config.get(
+        'AUDIO_BASE_PATH'), f'{message_id}.m4a')
     with open(user_audio_path, 'wb') as f:
         f.write(message_content.content)
     whisper_text = chatgpt.whisper(user_audio_path)
