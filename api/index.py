@@ -65,11 +65,11 @@ def callback():
 
 @line_handler.add(MessageEvent, message=TextMessage)
 def handle_text_message(event):
-    user_input = event.message.text
     user_id = event.source.user_id
+    if not (user_exists(user_id)):
+        init_user_lang(user_id)
+    user_input = event.message.text
     if (user_input == "/setting") or (user_input == "設定"):
-        if not (user_exists(user_id)):
-            init_user_lang(user_id)
         flex_message = TextSendMessage(text="請選擇語音辨識後的翻譯語言（我方語言）",
                                        quick_reply=QuickReply(items=[
                                            QuickReplyButton(action=MessageAction(
@@ -131,30 +131,27 @@ def handle_text_message(event):
         # Format response message
         audio_language = user_dict[user_id][user_audio_language_key]
         translate_language = user_dict[user_id][user_translate_language_key]
-        response = f"""設定完畢！
+        response_text = f"""設定完畢！
 我方語言：{reverse_lang_dict[audio_language]}（{audio_language}）
 對方語言：{reverse_lang_dict[translate_language]}（{translate_language}）"""
         line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text=response))
+            event.reply_token, TextSendMessage(text=response_text))
 
     elif (user_input == "/current-setting") or (user_input == "目前設定"):
-        if not (user_exists(user_id)):
-            init_user_lang(user_id)
         # Format response message
         audio_language = user_dict[user_id][user_audio_language_key]
         translate_language = user_dict[user_id][user_translate_language_key]
-        response = f"""我方語言：{reverse_lang_dict[audio_language]}（{audio_language}）
+        response_text = f"""我方語言：{reverse_lang_dict[audio_language]}（{audio_language}）
 對方語言：{reverse_lang_dict[translate_language]}（{translate_language}）"""
         line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text=response))
+            event.reply_token, TextSendMessage(text=response_text))
 
     else:
-        if not (user_exists(user_id)):
-            init_user_lang(user_id)
-        response = chatgpt.translate(
+        # Translate result from user input
+        translated_text = chatgpt.translate(
             user_input, user_dict[user_id][user_translate_language_key])
         line_bot_api.reply_message(
-            event.reply_token, TextSendMessage(text=response))
+            event.reply_token, TextSendMessage(text=translated_text))
 
 
 @line_handler.add(MessageEvent, message=AudioMessage)
@@ -162,19 +159,20 @@ def handle_audio_message(event):
     user_id = event.source.user_id
     if not (user_exists(user_id)):
         init_user_lang(user_id)
+    # Read voice message for whisper api input
     message_id = event.message.id
-    message_content = line_bot_api.get_message_content(message_id)
     user_audio_path = os.path.join(app.config.get(
         'AUDIO_BASE_PATH'), f'{message_id}.m4a')
     with open(user_audio_path, 'wb') as f:
-        f.write(message_content.content)
-    whisper_text = chatgpt.whisper(user_audio_path)
+        f.write(line_bot_api.get_message_content(message_id).content)
+    whispered_text = chatgpt.whisper(user_audio_path)
     if (os.path.exists(user_audio_path)):
         os.remove(user_audio_path)
-    response_text = chatgpt.translate(
-        whisper_text, user_dict[user_id][user_audio_language_key])
+    # Translate result from whisper api output
+    translated_text = chatgpt.translate(
+        whispered_text, user_dict[user_id][user_audio_language_key])
     line_bot_api.reply_message(
-        event.reply_token, TextSendMessage(text=response_text))
+        event.reply_token, TextSendMessage(text=translated_text))
 
 
 def user_exists(user_id):
