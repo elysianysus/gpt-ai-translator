@@ -33,7 +33,7 @@ Using Flask, OpenAI whisper API, GPT3.5 API to develop line language translator.
 
 ## 如何開始
 
-#### 基本要求
+#### 環境變數
 
 - [ ] ENVIRONMENT
 - [x] LINE BOT ACCESS TOKEN
