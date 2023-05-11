@@ -21,13 +21,12 @@ load_dotenv()
 
 app = Flask(__name__)
 environment = Environment[os.getenv("ENVIRONMENT", Environment.VERCEL.value)]
-match environment:
-    case Environment.DEVELOPMENT:
-        app.config.from_object(DevelopmentConfig)
-    case Environment.PRODUCTION:
-        app.config.from_object(ProductionConfig)
-    case Environment.VERCEL:
-        app.config.from_object(ProductionForVercelConfig)
+if environment == Environment.DEVELOPMENT:
+    app.config.from_object(DevelopmentConfig)
+elif environment == Environment.PRODUCTION:
+    app.config.from_object(ProductionConfig)
+elif environment == Environment.VERCEL:
+    app.config.from_object(ProductionForVercelConfig)
 
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 line_handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
