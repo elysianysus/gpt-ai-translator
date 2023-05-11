@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 
 
 class Config:
@@ -6,18 +7,24 @@ class Config:
 
 
 class DevelopmentConfig(Config):
-    ENV = 'development'
+    ENV = "development"
     DEBUG = True
-    AUDIO_BASE_PATH = os.path.join('data', 'audio')
+    AUDIO_BASE_PATH = os.path.join("data", "audio")
 
 
 class ProductionConfig(Config):
-    ENV = 'production'
+    ENV = "production"
     DEBUG = False
-    AUDIO_BASE_PATH = os.path.join('data', 'audio')
+    AUDIO_BASE_PATH = os.path.join("data", "audio")
 
 
 class ProductionForVercelConfig(Config):
-    ENV = 'production'
+    ENV = "production"
     DEBUG = False
-    AUDIO_BASE_PATH = '/tmp'
+    AUDIO_BASE_PATH = "/tmp"
+
+
+class Environment(Enum):
+    DEVELOPMENT = "DEVELOPMENT"
+    PRODUCTION = "PRODUCTION"
+    VERCEL = "VERCEL"
