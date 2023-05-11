@@ -1,4 +1,5 @@
 import os
+from enum import Enum
 
 
 class Config:
@@ -21,3 +22,9 @@ class ProductionForVercelConfig(Config):
     ENV = "production"
     DEBUG = False
     AUDIO_BASE_PATH = "/tmp"
+
+
+class Environment(Enum):
+    DEVELOPMENT = "DEVELOPMENT"
+    PRODUCTION = "PRODUCTION"
+    VERCEL = "VERCEL"

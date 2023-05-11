@@ -20,7 +20,14 @@ from api.config.configs import *
 load_dotenv()
 
 app = Flask(__name__)
-app.config.from_object(ProductionForVercelConfig)
+environment = Environment[os.getenv("ENVIRONMENT", Environment.VERCEL.value)]
+match environment:
+    case Environment.DEVELOPMENT:
+        app.config.from_object(DevelopmentConfig)
+    case Environment.PRODUCTION:
+        app.config.from_object(ProductionConfig)
+    case Environment.VERCEL:
+        app.config.from_object(ProductionForVercelConfig)
 
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 line_handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
@@ -57,7 +64,7 @@ user_dict = {}
 
 @app.route("/")
 def home():
-    return "Translator now working..."
+    return "OK"
 
 
 @app.route("/webhook", methods=["POST"])
