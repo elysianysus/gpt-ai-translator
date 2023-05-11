@@ -24,6 +24,6 @@ class ChatGPT:
         response = openai.ChatCompletion.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
-            temperature=self.temperature
+            temperature=self.temperature,
         )
-        return response['choices'][0]['message']['content']
+        return response["choices"][0]["message"]["content"]
