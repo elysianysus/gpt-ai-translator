@@ -38,12 +38,12 @@ Using Flask, OpenAI whisper API, GPT3.5 API to develop line language translator.
 
 #### 環境變數
 
-| 名稱                  | 預設值 | 說明                                       |
-| --------------------- | ------ | ------------------------------------------ |
-| ENVIRONMENT           | VERCEL | 執行環境                                   |
-| LINE BOT ACCESS TOKEN | null   | LINE 的 channel access token，用來傳送訊息 |
-| LINE BOT SECRET       | null   | LINE 的 channel secret，用來驗證訊息來源   |
-| OPENAI_API_KEY        | null   | OpenAI 的 API key                          |
+| 名稱                      | 預設值 | 說明                                      |
+| ------------------------- | ------ | ---------------------------------------- |
+| ENVIRONMENT               | VERCEL | 執行環境                                  |
+| LINE_CHANNEL_ACCESS_TOKEN | null   | LINE 的 channel access token，用來傳送訊息 |
+| LINE_CHANNEL_SECRET       | null   | LINE 的 channel secret，用來驗證訊息來源    |
+| OPENAI_API_KEY            | null   | OpenAI 的 API key                         |
 
 #### 部署至 Vercel
 
