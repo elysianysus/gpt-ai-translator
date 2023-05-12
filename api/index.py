@@ -73,7 +73,6 @@ def home():
 def callback():
     signature = request.headers["X-Line-Signature"]
     body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
     try:
         line_handler.handle(body, signature)
     except InvalidSignatureError:
