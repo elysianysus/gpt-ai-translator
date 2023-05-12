@@ -37,15 +37,18 @@ chatgpt = ChatGPT()
 
 lang_dict = {
     "繁體中文": "Traditional Chinese",
+    "簡體中文": "Simplified Chinese",
     "英文": "English",
     "日文": "Japanese",
     "韓文": "Korean",
-    "法文": "French",
+    "越南文": "Vietnamese",
     "泰文": "Thai",
     "義大利文": "Italian",
     "西班牙文": "Spanish",
+    "葡萄牙文": "Portuguese",
     "荷蘭文": "Dutch",
     "德文": "German",
+    "法文": "French",
 }
 reverse_lang_dict = {value: key for key, value in lang_dict.items()}
 
@@ -70,7 +73,6 @@ def home():
 def callback():
     signature = request.headers["X-Line-Signature"]
     body = request.get_data(as_text=True)
-    app.logger.info("Request body: " + body)
     try:
         line_handler.handle(body, signature)
     except InvalidSignatureError:
@@ -93,6 +95,9 @@ def handle_text_message(event):
                         action=MessageAction(label="繁體中文", text="設定辨識翻譯 " + "繁體中文")
                     ),
                     QuickReplyButton(
+                        action=MessageAction(label="簡體中文", text="設定辨識翻譯 " + "簡體中文")
+                    ),
+                    QuickReplyButton(
                         action=MessageAction(label="英文", text="設定辨識翻譯 " + "英文")
                     ),
                     QuickReplyButton(
@@ -102,7 +107,7 @@ def handle_text_message(event):
                         action=MessageAction(label="韓文", text="設定辨識翻譯 " + "韓文")
                     ),
                     QuickReplyButton(
-                        action=MessageAction(label="法文", text="設定辨識翻譯 " + "法文")
+                        action=MessageAction(label="越南文", text="設定辨識翻譯 " + "越南文")
                     ),
                     QuickReplyButton(
                         action=MessageAction(label="泰文", text="設定辨識翻譯 " + "泰文")
@@ -114,10 +119,16 @@ def handle_text_message(event):
                         action=MessageAction(label="西班牙文", text="設定辨識翻譯 " + "西班牙文")
                     ),
                     QuickReplyButton(
+                        action=MessageAction(label="葡萄牙文", text="設定辨識翻譯 " + "葡萄牙文")
+                    ),
+                    QuickReplyButton(
                         action=MessageAction(label="荷蘭文", text="設定辨識翻譯 " + "荷蘭文")
                     ),
                     QuickReplyButton(
                         action=MessageAction(label="德文", text="設定辨識翻譯 " + "德文")
+                    ),
+                    QuickReplyButton(
+                        action=MessageAction(label="法文", text="設定辨識翻譯 " + "法文")
                     ),
                 ]
             ),
@@ -137,6 +148,9 @@ def handle_text_message(event):
                         action=MessageAction(label="繁體中文", text="設定打字翻譯 " + "繁體中文")
                     ),
                     QuickReplyButton(
+                        action=MessageAction(label="簡體中文", text="設定打字翻譯 " + "簡體中文")
+                    ),
+                    QuickReplyButton(
                         action=MessageAction(label="英文", text="設定打字翻譯 " + "英文")
                     ),
                     QuickReplyButton(
@@ -146,7 +160,7 @@ def handle_text_message(event):
                         action=MessageAction(label="韓文", text="設定打字翻譯 " + "韓文")
                     ),
                     QuickReplyButton(
-                        action=MessageAction(label="法文", text="設定打字翻譯 " + "法文")
+                        action=MessageAction(label="越南文", text="設定打字翻譯 " + "越南文")
                     ),
                     QuickReplyButton(
                         action=MessageAction(label="泰文", text="設定打字翻譯 " + "泰文")
@@ -158,10 +172,16 @@ def handle_text_message(event):
                         action=MessageAction(label="西班牙文", text="設定打字翻譯 " + "西班牙文")
                     ),
                     QuickReplyButton(
+                        action=MessageAction(label="葡萄牙文", text="設定打字翻譯 " + "葡萄牙文")
+                    ),
+                    QuickReplyButton(
                         action=MessageAction(label="荷蘭文", text="設定打字翻譯 " + "荷蘭文")
                     ),
                     QuickReplyButton(
                         action=MessageAction(label="德文", text="設定打字翻譯 " + "德文")
+                    ),
+                    QuickReplyButton(
+                        action=MessageAction(label="法文", text="設定打字翻譯 " + "法文")
                     ),
                 ]
             ),

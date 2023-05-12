@@ -21,15 +21,18 @@ Using Flask, OpenAI whisper API, GPT3.5 API to develop line language translator.
 | 語系     | 英文描述            |
 | -------- | ------------------- |
 | 繁體中文 | Traditional Chinese |
+| 簡體中文 | Simplified Chinese  |
 | 英文     | English             |
 | 日文     | Japanese            |
 | 韓文     | Korean              |
-| 法文     | French              |
+| 越南文   | Vietnamese          |
 | 泰文     | Thai                |
 | 義大利文 | Italian             |
 | 西班牙文 | Spanish             |
+| 葡萄牙文 | Portuguese          |
 | 荷蘭文   | Dutch               |
 | 德文     | German              |
+| 法文     | French              |
 
 ## 如何開始
 
