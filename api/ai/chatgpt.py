@@ -19,8 +19,8 @@ class ChatGPT:
         return transcript["text"]
 
     def translate(self, text, language):
-        prompt = f"""'{text}'
-        Help me to translate this sentence to {language}, only target language, no need original language."""
+        prompt = f"""{text}
+Help me translate this sentence to {language}, only target language, no need original language."""
         response = openai.ChatCompletion.create(
             model=self.model,
             messages=[{"role": "user", "content": prompt}],
