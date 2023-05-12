@@ -1,4 +1,5 @@
 import os
+import librosa
 
 from dotenv import load_dotenv
 from flask import Flask, request, abort
@@ -14,6 +15,7 @@ from linebot.models import (
     QuickReplyButton,
     MessageAction,
 )
+from gtts import gTTS
 from api.ai.chatgpt import ChatGPT
 from api.config.configs import *
 
@@ -51,6 +53,22 @@ lang_dict = {
     "法文": "French",
 }
 reverse_lang_dict = {value: key for key, value in lang_dict.items()}
+# IETF language tag
+ietf_lang_dict = {
+    "Traditional Chinese": "zh-TW",
+    "Simplified Chinese": "zh-CN",
+    "English": "en",
+    "Japanese": "ja",
+    "Korean": "ko",
+    "Vietnamese": "vi",
+    "Thai": "th",
+    "Italian": "it",
+    "Spanish": "es",
+    "Portuguese": "pt",
+    "Dutch": "nl",
+    "German": "de",
+    "French": "fr",
+}
 
 # endregion
 
@@ -220,6 +238,22 @@ def handle_text_message(event):
         )
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=translated_text)
+        )
+        # Audio output with translate result
+        translated_text_audio_path = os.path.join(
+            app.config.get("AUDIO_BASE_PATH"), f"{event.message.id}.m4a"
+        )
+        tts = gTTS(
+            translated_text,
+            lang=ietf_lang_dict[user_dict[user_id][user_translate_language_key]],
+        )
+        tts.save(translated_text_audio_path)
+        translated_text_audio_duration = librosa.get_duration(
+            path=translated_text_audio_path
+        )
+        line_bot_api.reply_message(
+            event.reply_token,
+            AudioSendMessage(original_content_url=translated_text_audio_path),
         )
 
 
