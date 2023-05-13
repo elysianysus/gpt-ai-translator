@@ -17,6 +17,7 @@ from linebot.models import (
     MessageAction,
 )
 from gtts import gTTS
+from librosa import get_duration
 from minio import Minio
 from api.ai.chatgpt import ChatGPT
 from api.config.configs import *
@@ -338,7 +339,7 @@ def get_audio_url(user_id, audio_path):
 
 
 def get_audio_duration(audio_path):
-    return librosa.get_duration(path=audio_path)
+    return get_duration(path=audio_path)
 
 
 if __name__ == "__main__":
