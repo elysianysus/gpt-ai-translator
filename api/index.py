@@ -313,7 +313,7 @@ def get_minio_client():
 
 def clean_audios(user_id):
     client = get_minio_client()
-    bucket_name = os.getenv("MINIO_BUCKET")
+    bucket_name = os.getenv("MINIO_BUCKET", "gpt-ai-translator")
     objects = client.list_objects(
         bucket_name, prefix=hashlib.sha256(user_id.encode()).hexdigest(), recursive=True
     )
@@ -323,7 +323,7 @@ def clean_audios(user_id):
 
 def upload_audio(user_id, audio_path):
     client = get_minio_client()
-    bucket_name = os.getenv("MINIO_BUCKET")
+    bucket_name = os.getenv("MINIO_BUCKET", "gpt-ai-translator")
     object_name = f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}"
     if not client.bucket_exists(bucket_name):
         client.make_bucket(bucket_name)
@@ -332,7 +332,7 @@ def upload_audio(user_id, audio_path):
 
 def get_audio_url(user_id, audio_path):
     client = get_minio_client()
-    bucket_name = os.getenv("MINIO_BUCKET")
+    bucket_name = os.getenv("MINIO_BUCKET", "gpt-ai-translator")
     object_name = f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}"
     return client.presigned_get_object(bucket_name, object_name)
 
