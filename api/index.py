@@ -257,14 +257,14 @@ def handle_text_message(event):
             translated_text_audio_url = get_audio_url(
                 user_id, translated_text_audio_path
             )
-            # translated_text_audio_duration = (
-            #     get_audio_duration(translated_text_audio_path) * 1000
-            # )
+            translated_text_audio_duration = (
+                get_audio_duration(translated_text_audio_path) * 1000
+            )
             line_bot_api.push_message(
                 user_id,
                 AudioSendMessage(
                     original_content_url=translated_text_audio_url,
-                    duration=30000,
+                    duration=translated_text_audio_duration,
                 ),
             )
 
