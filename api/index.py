@@ -1,5 +1,6 @@
 import os
 import librosa
+import hashlib
 
 from dotenv import load_dotenv
 from flask import Flask, request, abort
@@ -16,13 +17,14 @@ from linebot.models import (
     MessageAction,
 )
 from gtts import gTTS
+from minio import Minio
 from api.ai.chatgpt import ChatGPT
 from api.config.configs import *
 
 load_dotenv()
 
 app = Flask(__name__)
-environment = Environment[os.getenv("ENVIRONMENT", Environment.VERCEL.value)]
+environment = Environment[os.getenv("APP_ENVIRONMENT", Environment.VERCEL.value)]
 if environment == Environment.DEVELOPMENT:
     app.config.from_object(DevelopmentConfig)
 elif environment == Environment.PRODUCTION:
@@ -239,22 +241,32 @@ def handle_text_message(event):
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=translated_text)
         )
-        # Audio output with translate result
-        translated_text_audio_path = os.path.join(
-            app.config.get("AUDIO_BASE_PATH"), f"{event.message.id}.m4a"
-        )
-        tts = gTTS(
-            translated_text,
-            lang=ietf_lang_dict[user_dict[user_id][user_translate_language_key]],
-        )
-        tts.save(translated_text_audio_path)
-        translated_text_audio_duration = librosa.get_duration(
-            path=translated_text_audio_path
-        )
-        line_bot_api.reply_message(
-            event.reply_token,
-            AudioSendMessage(original_content_url=translated_text_audio_path),
-        )
+        if os.getenv("APP_PUSH_TRANSLATED_TEXT_AUDIO_ENABLED", "false") == "true":
+            translated_text_audio_path = os.path.join(
+                app.config.get("AUDIO_TEMP_PATH"), f"{event.message.id}.m4a"
+            )
+            # Translated result to audio file
+            tts = gTTS(
+                translated_text,
+                lang=ietf_lang_dict[user_dict[user_id][user_translate_language_key]],
+            )
+            tts.save(translated_text_audio_path)
+            # Operate audio file with minio
+            clean_audios(user_id)
+            upload_audio(user_id, translated_text_audio_path)
+            translated_text_audio_url = get_audio_url(
+                user_id, translated_text_audio_path
+            )
+            translated_text_audio_duration = (
+                get_audio_duration(translated_text_audio_path) * 1000
+            )
+            line_bot_api.push_message(
+                user_id,
+                AudioSendMessage(
+                    original_content_url=translated_text_audio_url,
+                    duration=translated_text_audio_duration,
+                ),
+            )
 
 
 @line_handler.add(MessageEvent, message=AudioMessage)
@@ -265,7 +277,7 @@ def handle_audio_message(event):
     # Read voice message for whisper api input
     message_id = event.message.id
     user_audio_path = os.path.join(
-        app.config.get("AUDIO_BASE_PATH"), f"{message_id}.m4a"
+        app.config.get("AUDIO_TEMP_PATH"), f"{message_id}.m4a"
     )
     with open(user_audio_path, "wb") as f:
         f.write(line_bot_api.get_message_content(message_id).content)
@@ -288,6 +300,45 @@ def init_user_lang(user_id):
         user_translate_language_key: "Japanese",
         user_audio_language_key: "Traditional Chinese",
     }
+
+
+def get_minio_client():
+    client = Minio(
+        os.getenv("MINIO_ENDPOINT"),
+        access_key=os.getenv("MINIO_ACCESS_KEY"),
+        secret_key=os.getenv("MINIO_SECRET_KEY"),
+    )
+    return client
+
+
+def clean_audios(user_id):
+    client = get_minio_client()
+    bucket_name = os.getenv("MINIO_BUCKET")
+    objects = client.list_objects(
+        bucket_name, prefix=hashlib.sha256(user_id.encode()).hexdigest(), recursive=True
+    )
+    for object in objects:
+        client.remove_object(bucket_name, object.object_name)
+
+
+def upload_audio(user_id, audio_path):
+    client = get_minio_client()
+    bucket_name = os.getenv("MINIO_BUCKET")
+    object_name = f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}"
+    if not client.bucket_exists(bucket_name):
+        client.make_bucket(bucket_name)
+    client.fput_object(bucket_name, object_name, audio_path)
+
+
+def get_audio_url(user_id, audio_path):
+    client = get_minio_client()
+    bucket_name = os.getenv("MINIO_BUCKET")
+    object_name = f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}"
+    return client.presigned_get_object(bucket_name, object_name)
+
+
+def get_audio_duration(audio_path):
+    return librosa.get_duration(path=audio_path)
 
 
 if __name__ == "__main__":
