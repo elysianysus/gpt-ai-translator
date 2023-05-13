@@ -1,5 +1,4 @@
 import os
-import librosa
 import hashlib
 
 from dotenv import load_dotenv
@@ -17,7 +16,6 @@ from linebot.models import (
     MessageAction,
 )
 from gtts import gTTS
-from librosa import get_duration
 from minio import Minio
 from api.ai.chatgpt import ChatGPT
 from api.config.configs import *
@@ -258,9 +256,7 @@ def handle_text_message(event):
             translated_text_audio_url = get_audio_url(
                 user_id, translated_text_audio_path
             )
-            translated_text_audio_duration = (
-                get_audio_duration(translated_text_audio_path) * 1000
-            )
+            translated_text_audio_duration = get_audio_duration() * 1000
             line_bot_api.push_message(
                 user_id,
                 AudioSendMessage(
@@ -338,8 +334,8 @@ def get_audio_url(user_id, audio_path):
     return client.presigned_get_object(bucket_name, object_name)
 
 
-def get_audio_duration(audio_path):
-    return get_duration(path=audio_path)
+def get_audio_duration():
+    return int(os.getenv("APP_TRANSLATED_TEXT_AUDIO_ALLOWED_DURATION", "30"))
 
 
 if __name__ == "__main__":

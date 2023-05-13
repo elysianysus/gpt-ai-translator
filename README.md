@@ -38,17 +38,18 @@ Using Flask, OpenAI whisper API, GPT3.5 API to develop line language translator.
 
 #### 環境變數
 
-| 名稱                                   | 預設值            | 說明                                                       |
-| -------------------------------------- | ----------------- | ---------------------------------------------------------- |
-| APP_ENVIRONMENT                        | VERCEL            | 執行環境                                                   |
-| APP_PUSH_TRANSLATED_TEXT_AUDIO_ENABLED | false             | 是否可以對得到的翻譯結果推送語音訊息（該功能須依賴 Minio） |
-| LINE_CHANNEL_ACCESS_TOKEN              | null              | LINE 的 channel access token                               |
-| LINE_CHANNEL_SECRET                    | null              | LINE 的 channel secret                                     |
-| OPENAI_API_KEY                         | null              | OpenAI 的 API key                                          |
-| MINIO_ENDPOINT                         | null              | Minio 的 endpoint                                          |
-| MINIO_ACCESS_KEY                       | null              | Minio 的 access key                                        |
-| MINIO_SECRET_KEY                       | null              | Minio 的 secret key                                        |
-| MINIO_BUCKET                           | gpt-ai-translator | Minio 的 bucket 名稱                                       |
+| 名稱                                       | 預設值            | 說明                                                             |
+| ------------------------------------------ | ----------------- | ---------------------------------------------------------------- |
+| APP_ENVIRONMENT                            | VERCEL            | 執行環境                                                         |
+| APP_PUSH_TRANSLATED_TEXT_AUDIO_ENABLED     | false             | 是否可以對取得的翻譯結果多推送一則語音訊息（該功能須依賴 Minio） |
+| APP_TRANSLATED_TEXT_AUDIO_ALLOWED_DURATION | 30                | 對於取得的翻譯結果語音訊息可允許的持續時間（超時則會截掉）       |
+| LINE_CHANNEL_ACCESS_TOKEN                  | null              | LINE 的 channel access token                                     |
+| LINE_CHANNEL_SECRET                        | null              | LINE 的 channel secret                                           |
+| OPENAI_API_KEY                             | null              | OpenAI 的 API key                                                |
+| MINIO_ENDPOINT                             | null              | Minio 的 endpoint                                                |
+| MINIO_ACCESS_KEY                           | null              | Minio 的 access key                                              |
+| MINIO_SECRET_KEY                           | null              | Minio 的 secret key                                              |
+| MINIO_BUCKET                               | gpt-ai-translator | Minio 的 bucket 名稱                                             |
 
 #### 部署至 Vercel
 
