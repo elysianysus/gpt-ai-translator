@@ -16,9 +16,10 @@ from linebot.models import (
     MessageAction,
 )
 from gtts import gTTS
-from minio import Minio
 from api.ai.chatgpt import ChatGPT
 from api.config.configs import *
+from api.storage.minio import MinioStorage
+from api.media.ffmpeg import FFmpeg
 
 load_dotenv()
 
@@ -34,7 +35,13 @@ elif environment == Environment.VERCEL:
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 line_handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 
+push_translated_text_audio_enabled = (
+    os.getenv("APP_PUSH_TRANSLATED_TEXT_AUDIO_ENABLED", "false") == "true"
+)
+
 chatgpt = ChatGPT()
+minio_storage = MinioStorage() if push_translated_text_audio_enabled else None
+ffmpeg = FFmpeg() if push_translated_text_audio_enabled else None
 
 # region Language related
 
@@ -240,7 +247,7 @@ def handle_text_message(event):
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=translated_text)
         )
-        if os.getenv("APP_PUSH_TRANSLATED_TEXT_AUDIO_ENABLED", "false") == "true":
+        if push_translated_text_audio_enabled:
             translated_text_audio_path = os.path.join(
                 app.config.get("AUDIO_TEMP_PATH"), f"{event.message.id}.m4a"
             )
@@ -256,7 +263,9 @@ def handle_text_message(event):
             translated_text_audio_url = get_audio_url(
                 user_id, translated_text_audio_path
             )
-            translated_text_audio_duration = get_audio_duration() * 1000
+            translated_text_audio_duration = (
+                get_audio_duration(translated_text_audio_path) * 1000
+            )
             line_bot_api.push_message(
                 user_id,
                 AudioSendMessage(
@@ -299,43 +308,29 @@ def init_user_lang(user_id):
     }
 
 
-def get_minio_client():
-    client = Minio(
-        os.getenv("MINIO_ENDPOINT"),
-        access_key=os.getenv("MINIO_ACCESS_KEY"),
-        secret_key=os.getenv("MINIO_SECRET_KEY"),
-    )
-    return client
-
-
 def clean_audios(user_id):
-    client = get_minio_client()
-    bucket_name = os.getenv("MINIO_BUCKET", "gpt-ai-translator")
-    objects = client.list_objects(
-        bucket_name, prefix=hashlib.sha256(user_id.encode()).hexdigest(), recursive=True
+    minio_storage.clean_files(
+        "gpt-ai-translator", hashlib.sha256(user_id.encode()).hexdigest(), True
     )
-    for object in objects:
-        client.remove_object(bucket_name, object.object_name)
 
 
 def upload_audio(user_id, audio_path):
-    client = get_minio_client()
-    bucket_name = os.getenv("MINIO_BUCKET", "gpt-ai-translator")
-    object_name = f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}"
-    if not client.bucket_exists(bucket_name):
-        client.make_bucket(bucket_name)
-    client.fput_object(bucket_name, object_name, audio_path)
+    minio_storage.upload_file(
+        "gpt-ai-translator",
+        f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}",
+        audio_path,
+    )
 
 
 def get_audio_url(user_id, audio_path):
-    client = get_minio_client()
-    bucket_name = os.getenv("MINIO_BUCKET", "gpt-ai-translator")
-    object_name = f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}"
-    return client.presigned_get_object(bucket_name, object_name)
+    return minio_storage.get_file_url(
+        "gpt-ai-translator",
+        f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}",
+    )
 
 
-def get_audio_duration():
-    return int(os.getenv("APP_TRANSLATED_TEXT_AUDIO_ALLOWED_DURATION", "30"))
+def get_audio_duration(audio_path):
+    return ffmpeg.probe(audio_path)["format"]["duration"]
 
 
 if __name__ == "__main__":
