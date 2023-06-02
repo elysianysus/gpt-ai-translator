@@ -35,9 +35,13 @@ elif environment == Environment.VERCEL:
 line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 line_handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 
+push_translated_text_audio_enabled = (
+    os.getenv("APP_PUSH_TRANSLATED_TEXT_AUDIO_ENABLED", "false") == "true"
+)
+
 chatgpt = ChatGPT()
-minio_storage = MinioStorage()
-ffmpeg = FFmpeg()
+minio_storage = MinioStorage() if push_translated_text_audio_enabled else None
+ffmpeg = FFmpeg() if push_translated_text_audio_enabled else None
 
 # region Language related
 
@@ -243,7 +247,7 @@ def handle_text_message(event):
         line_bot_api.reply_message(
             event.reply_token, TextSendMessage(text=translated_text)
         )
-        if os.getenv("APP_PUSH_TRANSLATED_TEXT_AUDIO_ENABLED", "false") == "true":
+        if push_translated_text_audio_enabled:
             translated_text_audio_path = os.path.join(
                 app.config.get("AUDIO_TEMP_PATH"), f"{event.message.id}.m4a"
             )
