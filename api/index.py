@@ -16,9 +16,9 @@ from linebot.models import (
     MessageAction,
 )
 from gtts import gTTS
-from minio import Minio
 from api.ai.chatgpt import ChatGPT
 from api.config.configs import *
+from api.storage.minio import MinioStorage
 
 load_dotenv()
 
@@ -35,6 +35,7 @@ line_bot_api = LineBotApi(os.getenv("LINE_CHANNEL_ACCESS_TOKEN"))
 line_handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 
 chatgpt = ChatGPT()
+minio_storage = MinioStorage()
 
 # region Language related
 
@@ -299,39 +300,25 @@ def init_user_lang(user_id):
     }
 
 
-def get_minio_client():
-    client = Minio(
-        os.getenv("MINIO_ENDPOINT"),
-        access_key=os.getenv("MINIO_ACCESS_KEY"),
-        secret_key=os.getenv("MINIO_SECRET_KEY"),
-    )
-    return client
-
-
 def clean_audios(user_id):
-    client = get_minio_client()
-    bucket_name = os.getenv("MINIO_BUCKET", "gpt-ai-translator")
-    objects = client.list_objects(
-        bucket_name, prefix=hashlib.sha256(user_id.encode()).hexdigest(), recursive=True
+    minio_storage.clean_files(
+        "gpt-ai-translator", hashlib.sha256(user_id.encode()).hexdigest(), True
     )
-    for object in objects:
-        client.remove_object(bucket_name, object.object_name)
 
 
 def upload_audio(user_id, audio_path):
-    client = get_minio_client()
-    bucket_name = os.getenv("MINIO_BUCKET", "gpt-ai-translator")
-    object_name = f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}"
-    if not client.bucket_exists(bucket_name):
-        client.make_bucket(bucket_name)
-    client.fput_object(bucket_name, object_name, audio_path)
+    minio_storage.upload_file(
+        "gpt-ai-translator",
+        f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}",
+        audio_path,
+    )
 
 
 def get_audio_url(user_id, audio_path):
-    client = get_minio_client()
-    bucket_name = os.getenv("MINIO_BUCKET", "gpt-ai-translator")
-    object_name = f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}"
-    return client.presigned_get_object(bucket_name, object_name)
+    return minio_storage.get_file_url(
+        "gpt-ai-translator",
+        f"/{hashlib.sha256(user_id.encode()).hexdigest()}/{os.path.basename(audio_path)}",
+    )
 
 
 def get_audio_duration():
