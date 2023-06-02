@@ -326,7 +326,7 @@ def get_audio_url(user_id, audio_path):
 
 
 def get_audio_duration(audio_path):
-    return ffmpeg.get_media_duration(audio_path)
+    return ffmpeg.probe(audio_path)["format"]["duration"]
 
 
 if __name__ == "__main__":
