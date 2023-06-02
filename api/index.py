@@ -19,6 +19,7 @@ from gtts import gTTS
 from api.ai.chatgpt import ChatGPT
 from api.config.configs import *
 from api.storage.minio import MinioStorage
+from api.media.ffmpeg import FFmpeg
 
 load_dotenv()
 
@@ -36,6 +37,7 @@ line_handler = WebhookHandler(os.getenv("LINE_CHANNEL_SECRET"))
 
 chatgpt = ChatGPT()
 minio_storage = MinioStorage()
+ffmpeg = FFmpeg()
 
 # region Language related
 
@@ -257,7 +259,9 @@ def handle_text_message(event):
             translated_text_audio_url = get_audio_url(
                 user_id, translated_text_audio_path
             )
-            translated_text_audio_duration = get_audio_duration() * 1000
+            translated_text_audio_duration = (
+                get_audio_duration(translated_text_audio_path) * 1000
+            )
             line_bot_api.push_message(
                 user_id,
                 AudioSendMessage(
@@ -321,8 +325,8 @@ def get_audio_url(user_id, audio_path):
     )
 
 
-def get_audio_duration():
-    return int(os.getenv("APP_TRANSLATED_TEXT_AUDIO_ALLOWED_DURATION", "30"))
+def get_audio_duration(audio_path):
+    return ffmpeg.get_media_duration(audio_path)
 
 
 if __name__ == "__main__":
